@@ -1,0 +1,31 @@
+# Python & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Large Datasets (Exceeds GitHub file size limits)
+ShanghaiTech/
+shanghaitech.zip
+*.zip
+*.tar
+*.gz
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.env
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Large weights (optional: remove comment if pushing model via Git LFS / Releases instead)
+# *.pth

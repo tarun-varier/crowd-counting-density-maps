@@ -710,11 +710,13 @@ if os.path.exists(CHECKPOINT_PATH) and not TRAIN_FROM_SCRATCH:
     val_loss, val_mae, val_rmse = validate(model, val_loader, criterion, device)
     print(f"[BENCHMARK] Evaluated on Real ShanghaiTech Part A Test Set:")
     print(f"  Val Loss: {val_loss:.6f} | Val MAE: {val_mae:.2f} | Val RMSE: {val_rmse:.2f}")
-    num_epochs = 5
-    history['train_loss'] = [0.0124, 0.0098, 0.0076, 0.0062, 0.0051]
-    history['val_loss'] = [val_loss * 1.55, val_loss * 1.32, val_loss * 1.15, val_loss * 1.06, val_loss]
-    history['val_mae'] = [val_mae * 1.55, val_mae * 1.34, val_mae * 1.18, val_mae * 1.07, val_mae]
-    history['val_rmse'] = [val_rmse * 1.48, val_rmse * 1.30, val_rmse * 1.15, val_rmse * 1.05, val_rmse]
+    print("[INFO] No epoch-by-epoch training history is available this run (weights were loaded, "
+          "not trained). Set TRAIN_FROM_SCRATCH = True to produce a real training curve.")
+    num_epochs = 1
+    history['val_loss'] = [val_loss]
+    history['val_mae'] = [val_mae]
+    history['val_rmse'] = [val_rmse]
+    # history['train_loss'] intentionally left empty: no training occurred this run
 else:
     num_epochs = 3
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
@@ -744,26 +746,37 @@ else:
 # -------------------------------------------------------------
 add_code('''
 # Plot training loss & evaluation error curves
-fig, axes = plt.subplots(1, 2, figsize=(14, 4.5))
+if len(history['train_loss']) > 1:
+    fig, axes = plt.subplots(1, 2, figsize=(14, 4.5))
 
-axes[0].plot(range(1, num_epochs + 1), history['train_loss'], label='Train Loss', marker='o', color='#1d3557', linewidth=2)
-axes[0].plot(range(1, num_epochs + 1), history['val_loss'], label='Val Loss', marker='s', color='#e63946', linewidth=2)
-axes[0].set_title('ShanghaiTech Part A - Training & Validation Loss', fontsize=11, fontweight='bold')
-axes[0].set_xlabel('Epoch')
-axes[0].set_ylabel('Density Loss')
-axes[0].legend()
-axes[0].grid(True, linestyle='--', alpha=0.6)
+    axes[0].plot(range(1, num_epochs + 1), history['train_loss'], label='Train Loss', marker='o', color='#1d3557', linewidth=2)
+    axes[0].plot(range(1, num_epochs + 1), history['val_loss'], label='Val Loss', marker='s', color='#e63946', linewidth=2)
+    axes[0].set_title('ShanghaiTech Part A - Training & Validation Loss', fontsize=11, fontweight='bold')
+    axes[0].set_xlabel('Epoch')
+    axes[0].set_ylabel('Density Loss')
+    axes[0].legend()
+    axes[0].grid(True, linestyle='--', alpha=0.6)
 
-axes[1].plot(range(1, num_epochs + 1), history['val_mae'], label='Val MAE', marker='o', color='#2a9d8f', linewidth=2)
-axes[1].plot(range(1, num_epochs + 1), history['val_rmse'], label='Val RMSE', marker='^', color='#f4a261', linewidth=2)
-axes[1].set_title('ShanghaiTech Part A - Counting Error (MAE & RMSE)', fontsize=11, fontweight='bold')
-axes[1].set_xlabel('Epoch')
-axes[1].set_ylabel('Head Count Error')
-axes[1].legend()
-axes[1].grid(True, linestyle='--', alpha=0.6)
+    axes[1].plot(range(1, num_epochs + 1), history['val_mae'], label='Val MAE', marker='o', color='#2a9d8f', linewidth=2)
+    axes[1].plot(range(1, num_epochs + 1), history['val_rmse'], label='Val RMSE', marker='^', color='#f4a261', linewidth=2)
+    axes[1].set_title('ShanghaiTech Part A - Counting Error (MAE & RMSE)', fontsize=11, fontweight='bold')
+    axes[1].set_xlabel('Epoch')
+    axes[1].set_ylabel('Head Count Error')
+    axes[1].legend()
+    axes[1].grid(True, linestyle='--', alpha=0.6)
 
-plt.tight_layout()
-plt.show()
+    plt.tight_layout()
+    plt.show()
+else:
+    # A pre-trained checkpoint was loaded this run, so there is no real
+    # epoch-by-epoch curve to plot -- report the single measured point instead
+    # of fabricating one.
+    print("[INFO] Model was loaded from a pre-trained checkpoint this run, "
+          "so no epoch-by-epoch training curve is available.")
+    print(f"       Single-point test-set evaluation -> "
+          f"Val Loss: {history['val_loss'][0]:.6f} | "
+          f"Val MAE: {history['val_mae'][0]:.2f} | "
+          f"Val RMSE: {history['val_rmse'][0]:.2f}")
 ''')
 
 # -------------------------------------------------------------
